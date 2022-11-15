@@ -1,0 +1,125 @@
+#Script that creates plots for output from script "Cross- validation of frequency and dispersion measures"
+
+
+#Load the required packages
+library(GGally)
+library(readxl)
+library(ggplot2)
+library(gridExtra)
+library(cowplot)
+
+#Correlation analysis and plotting of variables from cross validation and dispersion
+
+Results <- read_excel("") # "" Pathway to excel document with matrix containing numerical data from dispersion measures and cross validation
+myData <- Results[(2:274),] # Select relevant rows
+
+#Rename columns
+header <- c("word", "NO", "globalfreq", "dp", "range", "rel.range", "chisq", "controlled.chisq", "D_uneq", "", "acc.freq", "", "", "acc.dp", "", "", "acc.rang", "", "", "acc.chisq", "", "", "acc.D_uneq", "")
+colnames(myData) <- header
+
+
+#Extract accuracy vectors as numeric data
+freq.accuracy <- as.numeric(myData$acc.freq)
+dp.accuracy <- as.numeric(myData$acc.dp)
+range.accuracy <- as.numeric(myData$acc.rang)
+chisq.accuracy <- as.numeric(myData$acc.chisq)
+D_uneq.accuracy <- as.numeric(myData$acc.D_uneq)
+
+
+#Extract global vectors as numeric data
+freq <- as.numeric(myData$globalfreq)
+dp <- as.numeric(myData$dp)
+rel.range <- as.numeric(myData$rel.range)
+chisq <- (as.numeric(myData$chisq)/as.numeric(myData$NO)) # chisq is controlled for NO
+D_uneq <- as.numeric(myData$D_uneq)
+
+
+#Create data frame of the global and accuracy vectors
+acc_df <- data.frame(log(freq), rel.range, log(chisq), dp, D_uneq, log(freq.accuracy), range.accuracy, log(chisq.accuracy), dp.accuracy, D_uneq.accuracy)
+
+#Create custom plot matrix of correlation coefficients (Spearman) between all variables
+
+my_custom_cor <- function(data, mapping, color = I("black"), ...) {
+  x <- GGally::eval_data_col(data,mapping$x)
+  y <- GGally::eval_data_col(data,mapping$y)
+
+  ct <- cor.test(x,y, method="spearman", exact=FALSE)  
+  sig <- symnum(
+    ct$p.value, corr = FALSE, na = FALSE,
+    cutpoints = c(0, 0.001, 0.01, 0.05, 0.1, 1),
+    symbols = c("***", "**", "*", ".", " ")
+  )
+  
+  r <- unname(ct$estimate)
+  rt <- format(r, digits=2)[1]
+  tt <- as.character(rt)
+  
+  # plot the cor value
+  ggally_text(
+    label = tt, 
+    mapping = aes(),
+    xP = 0.5, yP = 0.5,
+    size = 4,
+    color = color,
+    ...
+  ) + 
+    # add the sig stars
+    geom_text(
+      aes_string(
+        x = 0.5,
+        y = 0.2
+      ),
+      label = sig,
+      size = 6,
+      color = I("red"),
+      ...
+    ) +
+    # remove all the background stuff and wrap it with a dashed line
+  theme_classic() + 
+    theme(
+      panel.background = element_rect(
+        color = color, 
+        linetype = "longdash"
+      ), 
+      axis.line = element_blank(), 
+      axis.ticks = element_blank(), 
+      axis.text.y = element_blank(), 
+      axis.text.x = element_blank()
+    )
+  }
+  
+
+
+ggpairs(acc_df, upper = list(continuous = my_custom_cor), 
+        lower = list(geom_line()), 
+       columnLabels = c("freq","range","chisq", "DP", "D_uneq","freq -x-","rang -x-","chisq -x-","DP -x-", "D_uneq -x-"))
+
+
+
+#Plot controlled chisq and uncontrolled chisq
+
+chi2 <- as.numeric(myData$chisq)
+
+df1 <- data.frame(log(chisq), log(chisq.accuracy))
+df2 <- data.frame(log(chi2), log(chisq.accuracy))
+
+
+plot1 <- ggplot(df1, aes(x = log(chisq.accuracy), y = log(chisq))) + geom_point()
+plot1 <- plot1 + labs(x = "log(chisq -x-)", y = "Controlled log(chisq)")
+plot2 <- ggplot(df2, aes(x= log(chisq.accuracy), y = log(chi2))) + geom_point()
+plot2 <- plot2 + labs(x= "log(chisq -x-)", y = "Uncontrolled log(chisq)")
+
+plot_grid(plot1, plot2, labels = c("Controlled", "Uncontrolled"))
+
+
+
+gf <- as.numeric(myData$NO)
+
+
+#Plot the relationship between NO and rank
+plot(rank(-gf, ties.method="min"),(gf), xlab = "Rank", ylab = "Number of occurrences")
+
+
+
+
+
