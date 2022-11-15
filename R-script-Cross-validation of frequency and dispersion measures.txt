@@ -1,0 +1,325 @@
+
+#Cross-validation of 5 dispersion measures using Leksikografisk bokmålskorpus(LBK)
+
+#This R script calculates both global scores and predictive accuracies for the frequency and dispersion estimates NO, deviation of prorportions (Gries #2008), chisq, range and Juilland's D (Lyne 1985). The scores are estimated on basis of observed occurrences in the corpus Leksikografisk bokmålskorpus 
+#"Lexicographic corpus of Norwegian Bokmål" (See http://www.hf.uio.no/iln/tjenester/kunnskap/samlinger/bokmal/veiledningkorpus/) . 
+#See the article Paulsen(2022 for full details)
+
+
+#Observed occurrences in different subdomains of LBK (By filling out the occurrences of a corpus item below, the script will provide the accumulated and mean predictive accuracy for each measure, in addition to the global scores.)
+
+                #AV1,2,3,4		
+k1.frequencies = c(0,0,0,0                            )
+                #SA0,1,2,3,4,5,6,7,9,10,11	
+k2.frequencies = c(0,0,0,0,0,0,0,0,0,0,0              )
+                #SK0,1,2,3,4,5	
+k3.frequencies = c(0,0,0,0,0,0                        )
+                #TV0,2,3	
+k4.frequencies = c(0,0,0                             )
+                #UN0,1,2,4,5 	
+k5.frequencies = c(0,0,0,0,0                         )
+
+#Number of occurrences per domain
+
+k1.totalfreq = sum(k1.frequencies)
+k2.totalfreq = sum(k2.frequencies)
+k3.totalfreq = sum(k3.frequencies)
+k4.totalfreq = sum(k4.frequencies)
+k5.totalfreq = sum(k5.frequencies)
+K.totalfreq = sum(k1.totalfreq,k2.totalfreq,k3.totalfreq,k4.totalfreq,k5.totalfreq)
+#Number of total tokens in LBK
+size_K = 115269971
+
+#Range per domain
+
+rang.k1 = (sum(k1.frequencies != 0))
+rang.k2 = (sum(k2.frequencies != 0))
+rang.k3 = (sum(k3.frequencies != 0))
+rang.k4 = (sum(k4.frequencies != 0))
+rang.k5 = (sum(k5.frequencies != 0))
+
+#K1(AV) variables
+
+  
+    size_k1 = 6529705 #number of tokens in AV 
+    size_k15 = size_K-size_k1 #number of tokens in remaining domains
+    parts.k1 = 4 #number of parts
+    k1.prop = c(0.143,0.722,0.079,0.057) #subdomains proportions
+    k15.frequencies = c(k2.frequencies,k3.frequencies,k4.frequencies,k5.frequencies)  #frequency vector of remaining domains
+    k15.totalfreq = K.totalfreq-k1.totalfreq #frequency in remaining domains
+    rang.k15 = (sum(rang.k2,rang.k3,rang.k4,rang.k5))#range in remaining domains
+    parts.k15 = 29-parts.k1 #number of subparts in remaining domains
+
+
+#K2(SA) variables
+
+  
+    size_k2 = 55509394 #number of tokens in SA
+    size_k25 = size_K-size_k2 #number of tokens in remaining domains
+    parts.k2 = 4 #number of parts
+    k2.prop = c(0.039,0.047,0.165,0.065,0.013,0.142,0.085,0.051,0.128,0.012,0.252) #subdomains proportions
+    k25.frequencies = c(k1.frequencies,k3.frequencies,k4.frequencies,k5.frequencies)  #frequency vector of remaining domains
+    k25.totalfreq = K.totalfreq-k2.totalfreq #frequency in remaining domains
+    rang.k25 = (sum(rang.k1,rang.k3,rang.k4,rang.k5))#range in remaining domains
+    parts.k25 = 29-parts.k2 #number of subparts in remaining domains
+
+
+
+
+#K3(SK) variables
+
+  
+    size_k3 = 40115777 #number of tokens in SK
+    size_k35 = size_K-size_k3 #number of tokens in remaining domains
+    parts.k3 = 6 #number of parts
+    k3.prop = c(0.002,0.941,0.002,0.003,0.028,0.023) #subdomains proportions
+    k35.frequencies = c(k1.frequencies,k2.frequencies,k4.frequencies,k5.frequencies)  #frequency vector of remaining domains
+    k35.totalfreq = K.totalfreq-k3.totalfreq #frequency in remaining domains
+    rang.k35 = (sum(rang.k1,rang.k3,rang.k4,rang.k5))#range in remaining domains
+    parts.k35 = 29-parts.k3 #number of subparts in remaining domains
+
+
+
+
+#K4(TV) variables
+
+    size_k4 = 6442689 #number of tokens in TV
+    size_k45 = size_K-size_k4 #number of tokens in remaining domains
+    parts.k4 = 3 #number of parts
+    k4.prop = c(0.105,0.469,0.426) #subdomains proportions
+    k45.frequencies = c(k1.frequencies,k2.frequencies,k3.frequencies,k5.frequencies)  #frequency vector of remaining domains
+    k45.totalfreq = K.totalfreq-k4.totalfreq #frequency in remaining domains
+    rang.k45 = (sum(rang.k1,rang.k2,rang.k3,rang.k5))#range in remaining domains
+    parts.k45 = 29-parts.k4 #number of subparts in remaining domains
+
+
+#K5 (UN) variables
+
+
+    size_k5 = 6672406 #number of tokens in TV
+    size_k55 = size_K-size_k4 #number of tokens in remaining domains
+    parts.k5 = 5 #number of parts
+    k5.prop <- c(0.529,0.024,0.0005,0.155,0.292)#subdomains proportions
+    k55.frequencies = c(k1.frequencies,k2.frequencies,k3.frequencies,k4.frequencies)  #frequency vector of remaining domains
+    k55.totalfreq = K.totalfreq-k5.totalfreq #frequency in remaining domains
+    rang.k55 = (sum(rang.k1,rang.k2,rang.k3,rang.k4))#range in remaining domains
+    parts.k55 = 29-parts.k5 #number of subparts in remaining domains
+
+
+#Proportion of subdomains vectors. Training sets for each k1-5 test set.  
+
+k15.prop = c(0.020,0.024,0.084,0.033,0.007,0.073,0.044,0.026,0.065,0.006,0.129,0.001,0.347,0.001,0.001,0.011,0.008,0.006,0.029,0.026,0.031,0.001,0.00003,0.009,0.017)
+k25.prop = c(0.016,0.079,0.009,0.006,0.002,0.632,0.002,0.002,0.019,0.015,0.012,0.052,0.048,0.057,0.003,0.0001,0.017,0.031)
+k35.prop = c(0.012,0.063,0.007,0.005,0.029,0.034,0.122,0.048,0.010,0.105,0.063,0.038,0.094,0.009,0.187,0.009,0.042,0.038,0.045,0.002,0.00004,0.013,0.025)
+k45.prop = c(0.009,0.043,0.005,0.003,0.020,0.024,0.084,0.033,0.007,0.073,0.044,0.026,0.065,0.006,0.129,0.001,0.347,0.001,0.001,0.010,0.008,0.031,0.001,0.00003,0.009,0.017)
+k55.prop = c(0.009,0.043,0.005,0.003,0.020,0.024,0.084,0.033,0.007,0.073,0.044,0.026,0.065,0.006,0.129,0.001,0.348,0.001,0.001,0.011,0.008,0.006,0.029,0.026)
+
+
+#Calculation of predictive accuracies per measure
+
+#Frequency
+
+    #K1
+    k1_freqprop = ifelse(k1.totalfreq==0, 0,k1.totalfreq/size_k1)
+    k15_freqprop = ifelse(k15.totalfreq==0, 0, k15.totalfreq/size_k15)
+
+    y1 = abs(k1_freqprop-k15_freqprop)
+
+    #K2
+    k2_freqprop = ifelse(k2.totalfreq==0, 0, k2.totalfreq/size_k2)
+    k25_freqprop = ifelse(k25.totalfreq==0, 0, k25.totalfreq/size_k25)
+
+    y2 = abs(k2_freqprop-k25_freqprop)
+
+    #K3
+    k3_freqprop = ifelse(k3.totalfreq==0, 0, k3.totalfreq/size_k3)
+    k35_freqprop = ifelse(k35.totalfreq==0, 0, k35.totalfreq/size_k35)
+
+    y3 = abs(k3_freqprop-k35_freqprop)
+
+    #K4
+    k4_freqprop = ifelse(k4.totalfreq==0, 0, k4.totalfreq/size_k4)
+    k45_freqprop = ifelse(k45.totalfreq==0, 0, k45.totalfreq/size_k45)
+
+    y4 = abs(k4_freqprop-k45_freqprop)
+
+    #K5
+    k5_freqprop = ifelse(k5.totalfreq==0, 0, k5.totalfreq/size_k5)
+    k55_freqprop = ifelse(k55.totalfreq==0, 0, k55.totalfreq/size_k55)
+
+    y5 = abs(k5_freqprop-k55_freqprop)
+
+#DP
+
+    #K1
+    dpk1 = sum(abs(ifelse(k1.frequencies==0,0,k1.frequencies/k1.totalfreq)-k1.prop))/2
+    dpk15 = sum(abs(ifelse(k15.frequencies==0,0,k15.frequencies/k15.totalfreq)-k15.prop))/2
+    z1 = abs(dpk1-dpk15)
+    
+    #K2
+    dpk2 = sum(abs(ifelse(k2.frequencies==0,0,k2.frequencies/k2.totalfreq)-k2.prop))/2
+    dpk25 = sum(abs(ifelse(k25.frequencies==0,0,k25.frequencies/k25.totalfreq)-k25.prop))/2
+    z2 = abs(dpk2-dpk25)
+    
+    #K3
+    dpk3 = sum(abs(ifelse(k3.frequencies==0,0,k3.frequencies/k3.totalfreq)-k3.prop))/2
+    dpk35 = sum(abs(ifelse(k35.frequencies==0,0,k35.frequencies/k35.totalfreq)-k35.prop))/2
+    z3 = abs(dpk3-dpk35)
+    
+    #K4
+    dpk4 = sum(abs(ifelse(k4.frequencies==0,0,k4.frequencies/k4.totalfreq)-k4.prop))/2
+    dpk45 = sum(abs(ifelse(k45.frequencies==0,0,k45.frequencies/k45.totalfreq)-k45.prop))/2
+    z4 = abs(dpk4-dpk45)
+    
+    #K5
+    dpk5 = sum(abs(ifelse(k5.frequencies==0,0,k5.frequencies/k5.totalfreq)-k5.prop))/2
+    dpk55 = sum(abs(ifelse(k55.frequencies==0,0,k55.frequencies/k55.totalfreq)-k55.prop))/2
+    z5 = abs(dpk5-dpk55)
+
+#RANGE
+
+    #K1
+    rangrat.k1 = rang.k1/parts.k1
+    rangrat.k15 = rang.k15/parts.k15
+    x1 = abs(rangrat.k1-rangrat.k15)
+
+    #K2
+    rangrat.k2 = rang.k2/parts.k2
+    rangrat.k25 = rang.k25/parts.k25
+    x2 = abs(rangrat.k2-rangrat.k25)
+
+    #K3
+    rangrat.k3 = rang.k3/parts.k3
+    rangrat.k35 = rang.k35/parts.k35
+    x3 = abs(rangrat.k3-rangrat.k35)
+
+    #K4
+    rangrat.k4 = rang.k4/parts.k4
+    rangrat.k45 = rang.k45/parts.k45
+    x4 = abs(rangrat.k4-rangrat.k45)
+
+    #K5
+    rangrat.k5 = rang.k5/parts.k5
+    rangrat.k55 = rang.k55/parts.k55
+    x5 = abs(rangrat.k5-rangrat.k55)
+
+
+#Chisq
+    
+    #K1
+    chi.k1 = ifelse(sum(k1.frequencies)==0,0,sum(((k1.frequencies-(k1.totalfreq*k1.prop/sum(k1.prop)))^2)/(k1.totalfreq*k1.prop/sum(k1.prop))))
+    chi.k15 = ifelse(sum(k15.frequencies)==0,0,sum(((k15.frequencies-(k15.totalfreq*k15.prop/sum(k15.prop)))^2)/(k15.totalfreq*k15.prop/sum(k15.prop))))
+    w1 = abs(chi.k1 - chi.k15)
+    
+    #K2
+    chi.k2 = ifelse(sum(k2.frequencies)==0,0,sum(((k2.frequencies-(k2.totalfreq*k2.prop/sum(k2.prop)))^2)/(k2.totalfreq*k2.prop/sum(k2.prop))))
+    chi.k25 = ifelse(sum(k25.frequencies)==0,0,sum(((k25.frequencies-(k25.totalfreq*k25.prop/sum(k25.prop)))^2)/(k25.totalfreq*k25.prop/sum(k25.prop))))
+    w2 = abs(chi.k2 - chi.k25)
+    
+    #K3
+    chi.k3 = ifelse(sum(k3.frequencies)==0,0,sum(((k3.frequencies-(k3.totalfreq*k3.prop/sum(k3.prop)))^2)/(k3.totalfreq*k3.prop/sum(k3.prop))))
+    chi.k35 = ifelse(sum(k35.frequencies)==0,0,sum(((k35.frequencies-(k35.totalfreq*k35.prop/sum(k35.prop)))^2)/(k35.totalfreq*k35.prop/sum(k35.prop))))
+    w3 = abs(chi.k3 - chi.k35)
+    
+    #K4
+    chi.k4 = ifelse(sum(k4.frequencies)==0,0,sum(((k4.frequencies-(k4.totalfreq*k4.prop/sum(k4.prop)))^2)/(k4.totalfreq*k4.prop/sum(k4.prop))))
+    chi.k45 = ifelse(sum(k45.frequencies)==0,0,sum(((k45.frequencies-(k45.totalfreq*k45.prop/sum(k45.prop)))^2)/(k45.totalfreq*k45.prop/sum(k45.prop))))
+    w4 = abs(chi.k4 - chi.k45)
+    
+    #K5
+    chi.k5 = ifelse(sum(k5.frequencies)==0,0,sum(((k5.frequencies-(k5.totalfreq*k5.prop/sum(k5.prop)))^2)/(k5.totalfreq*k5.prop/sum(k5.prop))))
+    chi.k55 = ifelse(sum(k55.frequencies)==0,0,sum(((k55.frequencies-(k55.totalfreq*k55.prop/sum(k55.prop)))^2)/(k55.totalfreq*k55.prop/sum(k55.prop))))
+    w5 = abs(chi.k5 - chi.k55)
+
+#D_uneq(turned)
+
+#Define function of standard deviation
+
+    sd.pop <- function (values) {
+        sd(values)*sqrt((length(values)-1)/length(values))
+}
+
+#K1
+    D1.k1  = ifelse(sum(k1.frequencies)==0,0,(sd.pop(k1.frequencies/k1.prop)/mean(k1.frequencies/k1.prop))/sqrt(length(k1.frequencies)-1))
+    D1.k15 = ifelse(sum(k15.frequencies)==0,0,(sd.pop(k15.frequencies/k15.prop)/mean(k15.frequencies/k15.prop))/sqrt(length(k15.frequencies)-1))
+    v1 = abs(D1.k1 - D1.k15)
+
+#K2
+    D1.k2  = ifelse(sum(k2.frequencies)==0,0,(sd.pop(k2.frequencies/k2.prop)/mean(k2.frequencies/k2.prop))/sqrt(length(k2.frequencies)-1))
+    D1.k25 = ifelse(sum(k25.frequencies)==0,0,(sd.pop(k25.frequencies/k25.prop)/mean(k25.frequencies/k25.prop))/sqrt(length(k25.frequencies)-1))
+    v2 = abs(D1.k2 - D1.k25)
+#K3
+    D1.k3  = ifelse(sum(k3.frequencies)==0,0,(sd.pop(k3.frequencies/k3.prop)/mean(k3.frequencies/k3.prop))/sqrt(length(k3.frequencies)-1))
+    D1.k35 = ifelse(sum(k35.frequencies)==0,0,(sd.pop(k35.frequencies/k35.prop)/mean(k35.frequencies/k35.prop))/sqrt(length(k35.frequencies)-1))
+    v3 = abs(D1.k3 - D1.k35)
+#K4
+    D1.k4  = ifelse(sum(k4.frequencies)==0,0,(sd.pop(k4.frequencies/k4.prop)/mean(k4.frequencies/k4.prop))/sqrt(length(k4.frequencies)-1))
+    D1.k45 = ifelse(sum(k45.frequencies)==0,0,(sd.pop(k45.frequencies/k45.prop)/mean(k45.frequencies/k45.prop))/sqrt(length(k45.frequencies)-1))
+    v4 = abs(D1.k4 - D1.k45)
+#K5
+    D1.k5  = ifelse(sum(k5.frequencies)==0,0,(sd.pop(k5.frequencies/k5.prop)/mean(k5.frequencies/k5.prop))/sqrt(length(k5.frequencies)-1))
+    D1.k55 = ifelse(sum(k55.frequencies)==0,0,(sd.pop(k55.frequencies/k55.prop)/mean(k55.frequencies/k55.prop))/sqrt(length(k55.frequencies)-1))
+    v5 = abs(D1.k5 - D1.k55)
+
+
+
+#Accumulated and mean accuracies for each measure
+
+y <- c(y1,y2,y3,y4,y5)
+y.acc=sum(abs(y-0))
+y.mean=mean(y)
+y.trans=(y.mean/(K.totalfreq/size_K))
+
+z <- c(z1,z2,z3,z4,z5)
+z.acc=sum(abs(z-0))
+z.mean=mean(z)
+
+x = c(x1,x2,x3,x4,x5)
+x.acc=sum(abs(x-0))
+x.mean=mean(x)
+
+w <- c(w1,w2,w3,w4,w5)
+w.acc = sum(abs(w-0))
+w.mean=mean(w)
+w.trans=(w.mean/K.totalfreq)
+
+v = c(v1,v2,v3,v4,v5)
+v.acc = sum(abs(v-0))
+v.mean=mean(v)
+
+
+#Calculate NO, DP, range, chisq and D_uneq(turned)
+
+
+NO = K.totalfreq
+
+#DP
+    #Frequencies and proportions
+    k.frequencies = c(k1.frequencies,k2.frequencies,k3.frequencies,k4.frequencies,k5.frequencies)
+    k.props = c(0.008,0.041,0.004,0.003,0.019,0.022,0.079,0.032,0.006,0.068,0.041,0.025,0.062,0.006,0.122,0.001,0.328,0.001,0.001,0.010,0.008,0.006,0.027,0.025,0.030,0.001,0.00003,0.009,0.016)
+
+DP = sum(abs((k.frequencies/K.totalfreq)-k.props))/2
+
+Range = sum(rang.k1 + rang.k2 + rang.k3 + rang.k4 + rang.k5)
+
+Chisq = sum(((k.frequencies-(K.totalfreq*k.props/sum(k.props)))^2)/(K.totalfreq*k.props/sum(k.props)))
+
+D.uneq = (sd.pop(k.frequencies/k.props)/mean(k.frequencies/k.props))/sqrt(length(k.frequencies)-1)
+
+
+
+#Print dispersion measures
+cat(NO,"\t", DP,"\t", Range,"\t", Chisq,"\t", D1)
+
+#Print mean accuracy of dispersion measures
+cat(y.trans, "\t", y)
+
+cat(z.mean, "\t", z)
+
+cat(x.mean, "\t", x)
+
+cat(w.trans, "\t", w)
+
+cat(v.mean, "\t", v)
+
+
